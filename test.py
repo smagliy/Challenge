@@ -49,7 +49,7 @@ def agent_full_information(url):
     btn_all = driver.find_element_by_css_selector(
         'select.form-control.c-select[aria-controls] option[value="-1"]')
     btn_all.click()
-    driver.implicitly_wait(10)
+    time.sleep(10)
     dict_full = {
         'uii': [el.text for el in driver.find_elements_by_css_selector('td.left.sorting_2')],
         'uii_href': [el.get_attribute('href') for el in
