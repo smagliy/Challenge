@@ -1,14 +1,14 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 import pandas as pd
 import os
 import time
 import xlsxwriter
 
-path = os.path.dirname(os.path.abspath(__file__))
+path = os.path.dirname(os.path.abspath(__file__)) + '\output'
 prefs = {"download.default_directory": path}
 options = Options()
 options.add_experimental_option("prefs", prefs)
@@ -49,25 +49,38 @@ def agent_full_information(url):
     btn_all = driver.find_element_by_css_selector(
         'select.form-control.c-select[aria-controls] option[value="-1"]')
     btn_all.click()
-    time.sleep(10)
+    time.sleep(15)
+    list_all_even = [[i.text for i in el.find_elements_by_css_selector('td')]
+                for el in driver.find_elements_by_css_selector('tr.even')]
+    list_all_odd = [[i.text for i in el.find_elements_by_css_selector('td')]
+                for el in driver.find_elements_by_css_selector('tr.odd')]
+    list_all = list_all_odd + list_all_even
     dict_full = {
-        'uii': [el.text for el in driver.find_elements_by_css_selector('td.left.sorting_2')],
         'uii_href': [el.get_attribute('href') for el in
                      driver.find_elements_by_css_selector('td.left.sorting_2 a')],
-        'total': [el_1.text for el_1 in driver.find_elements_by_css_selector('td.right')]
+        'uii': [i[0] for i in list_all],
+        'bureau': [i[1] for i in list_all],
+        'investment_title': [i[2] for i in list_all],
+        'total': [i[3] for i in list_all],
+        'type': [i[4] for i in list_all],
+        'cio': [i[5] for i in list_all],
+        'projects': [i[6] for i in list_all]
     }
     return dict_full
 
 
 def add_excel_agent(dict_full, dict_el):
-    df1 = pd.DataFrame(dict_el['name'],
-                       dict_el['salary'])
-
-    df2 = pd.DataFrame(dict_full['uii'],
-                       dict_full['total'])
-    writer = pd.ExcelWriter('output/agencies.xlsx', engine='xlsxwriter')
-    df1.to_excel(writer, sheet_name='Agencies')
-    df2.to_excel(writer, sheet_name='Individual Investments')
+    writer = pd.ExcelWriter('output/new.xlsx', engine='xlsxwriter')
+    df1 = pd.DataFrame({'Name': dict_el['name'], 'Salary': dict_el['salary']})
+    df1.to_excel(writer, 'Angencies', index=False)
+    df2 = pd.DataFrame({'UII': dict_full['uii'],
+                        'Bureau': dict_full['bureau'],
+                        'Investment title': dict_full['investment_title'],
+                        'Total': dict_full['total'],
+                        'Type': dict_full['type'],
+                        'CIO': dict_full['cio'],
+                        'Projects': dict_full['projects']})
+    df2.to_excel(writer, 'Individual Investments', index=False)
     writer.save()
     return dict_full
 
@@ -94,3 +107,4 @@ def download_pdf(dict_only):
 
 if __name__ == "__main__":
     main()
+    driver.quit()
