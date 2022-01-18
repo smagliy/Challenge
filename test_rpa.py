@@ -1,8 +1,8 @@
+import time
+from pathlib import Path
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from pdf import PDFFiles
-import time
-from pathlib import Path
 
 
 class ItDashBoard(object):
