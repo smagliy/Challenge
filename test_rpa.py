@@ -3,6 +3,7 @@ from pathlib import Path
 
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
+from RPA.FileSystem import FileSystem
 
 from pdf import PDFFiles
 
@@ -14,6 +15,8 @@ class ItDashBoard(object):
         self.browser = Selenium()
         self.files = Files()
         self.agent = agent
+        self.output_path = str(Path(Path.cwd(), 'output'))
+        self.excel_file_path = str(Path(self.output_path, 'agencies.xlsx'))
 
     def click_dive_in(self):
         btn = self.browser.find_element('css:a.btn.btn-default.btn-lg-2x')
@@ -27,7 +30,8 @@ class ItDashBoard(object):
             'name': [el.text for el in self.browser.find_elements('css:span.h4.w200')],
             'salary': [el.text for el in self.browser.find_elements('css:span.h1.w900')]
         }
-        workbook = self.files.create_workbook('output/new_1.xlsx')
+        FileSystem().create_directory(self.output_path, parents=True)
+        workbook = self.files.create_workbook(self.excel_file_path)
         workbook.create_worksheet('Agencies')
         workbook.append_worksheet('Agencies', {'name': dict_elements['name'], 'salary': dict_elements['salary']})
         workbook.save()
@@ -43,9 +47,9 @@ class ItDashBoard(object):
         self.browser.go_to(url)
         self.browser.click_element_if_visible(
             'css:select.form-control.c-select[aria-controls="investments-table-object"]')
-        self.browser.find_element('css:select.form-control.c-select[aria-controls] option[value="-1"]').click()
-        time.sleep(15)
+        self.browser.click_element_if_visible('css:select.form-control.c-select[aria-controls] option[value="-1"]')
         list_all = self.browser.find_elements('css:table[id="investments-table-object"] tbody tr[role="row"]')
+        time.sleep(15)
         dict_all = {
             'uii': [],
             'bureau': [],
@@ -64,7 +68,7 @@ class ItDashBoard(object):
             dict_all['type'].append(cols[4].text)
             dict_all['cio'].append(cols[5].text)
             dict_all['projects'].append(cols[6].text)
-        workbook = self.files.open_workbook('output/new_1.xlsx')
+        workbook = self.files.open_workbook(self.excel_file_path)
         workbook.create_worksheet('Individual Investments')
         workbook.append_worksheet('Individual Investments', dict_all,
                                   header=['uii', 'bureau', 'investment title', 'total', 'type', 'cio', 'projects'])
@@ -74,8 +78,7 @@ class ItDashBoard(object):
 
     # download pdf files
     def links_to_go(self, hrefs):
-        path_to_download_folder = str(Path(Path.cwd(), 'output'))
-        self.browser.set_download_directory(path_to_download_folder)
+        self.browser.set_download_directory(self.output_path)
         for link in hrefs:
             self.browser.go_to(link)
             self.browser.click_element_if_visible('css:div.row.top-gutter.tuck-4 a')
