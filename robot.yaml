@@ -1,0 +1,22 @@
+tasks:
+  Create Excel File:
+    robotTaskName: Create Excel
+
+  Download PDFs:
+    robotTaskName: Download PDF
+
+  Compare Information:
+    robotTaskName: Compare Information
+
+condaConfigFile: conda.yaml
+
+artifactsDir: output
+
+ignoreFiles:
+  - .gitignore
+
+PATH:
+  - .
+
+PYTHONPATH:
+  - .

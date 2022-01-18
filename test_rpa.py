@@ -2,6 +2,7 @@ from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from pdf import PDFFiles
 import time
+from pathlib import Path
 
 
 class ItDashBoard(object):
@@ -12,19 +13,12 @@ class ItDashBoard(object):
         self.files = Files()
         self.agent = agent
 
-    # Open browser
-    def open_site(self, url):
-        self.browser.open_available_browser(url)
-
-    # Click the button 'dive in'
-    def click_button(self):
-        self.open_site('https://itdashboard.gov/')
+    def click_dive_in(self):
         btn = self.browser.find_element('css:a.btn.btn-default.btn-lg-2x')
         btn.click()
 
     # Looking for information from table in site`s department and add to new_1.xlsx file
     def search_informations(self):
-        self.click_button()
         self.browser.wait_until_element_is_visible('css:a.btn.btn-default.btn-sm')
         dict_elements = {
             'button': [el.get_attribute('href') for el in self.browser.find_elements('css:a.btn.btn-default.btn-sm')],
@@ -44,14 +38,11 @@ class ItDashBoard(object):
 
     # Collect information about agent and add to new_1.xlsx file
     def agent_full_information(self, url):
-        self.browser.open_available_browser(url)
-        self.browser.wait_until_element_is_visible(
-            'css:select.form-control.c-select[aria-controls="investments-table-object"]', timeout=10)
-        btn = self.browser.find_element('css:select.form-control.c-select[aria-controls="investments-table-object"]')
-        btn.click()
+        self.browser.go_to(url)
+        self.browser.click_element_if_visible(
+            'css:select.form-control.c-select[aria-controls="investments-table-object"]')
         btn_all = self.browser.find_element(
-            'css:select.form-control.c-select[aria-controls] option[value="-1"]')
-        btn_all.click()
+            'css:select.form-control.c-select[aria-controls] option[value="-1"]').click()
         time.sleep(15)
         list_all = self.browser.find_elements('css:table[id="investments-table-object"] tbody tr[role="row"]')
         dict_all = {
@@ -82,15 +73,17 @@ class ItDashBoard(object):
 
     # download pdf files
     def links_to_go(self, hrefs):
-        self.browser.set_download_directory('/home/kate/PycharmProjects/Challenge/output')
+        path_to_download_folder = str(Path(Path.cwd(), 'output'))
+        self.browser.set_download_directory(path_to_download_folder)
         for link in hrefs:
-            self.open_site(link)
-            self.browser.wait_until_element_is_visible('css:div.row.top-gutter.tuck-4 a')
-            self.browser.find_element('css:div.row.top-gutter.tuck-4 a').click()
+            self.browser.go_to(link)
+            self.browser.click_element_if_visible('css:div.row.top-gutter.tuck-4 a')
             time.sleep(10)
 
     # all functions
     def main(self):
+        self.browser.open_available_browser('https://itdashboard.gov/')
+        self.click_dive_in()
         dict_values = self.search_informations()
         list_href = self.agent_full_information(self.search_agent(dict_values))
         self.links_to_go(list_href)
