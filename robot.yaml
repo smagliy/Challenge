@@ -1,12 +1,6 @@
 tasks:
-  Create Excel File:
-    robotTaskName: Create Excel
-
-  Download PDFs:
-    robotTaskName: Download PDF
-
   Compare Information:
-    robotTaskName: Compare Information
+    shell: python test_rpa.py
 
 condaConfigFile: conda.yaml
 

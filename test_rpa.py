@@ -1,7 +1,9 @@
 import time
 from pathlib import Path
+
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
+
 from pdf import PDFFiles
 
 
@@ -41,8 +43,7 @@ class ItDashBoard(object):
         self.browser.go_to(url)
         self.browser.click_element_if_visible(
             'css:select.form-control.c-select[aria-controls="investments-table-object"]')
-        btn_all = self.browser.find_element(
-            'css:select.form-control.c-select[aria-controls] option[value="-1"]').click()
+        self.browser.find_element('css:select.form-control.c-select[aria-controls] option[value="-1"]').click()
         time.sleep(15)
         list_all = self.browser.find_elements('css:table[id="investments-table-object"] tbody tr[role="row"]')
         dict_all = {
