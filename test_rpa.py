@@ -94,6 +94,7 @@ class ItDashBoard(object):
         dict_values = self.search_informations()
         list_href = self.agent_full_information(self.search_agent(dict_values))
         self.links_to_go(list_href)
+        self.browser.close_browser()
 
 
 if __name__ == "__main__":
