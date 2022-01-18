@@ -1,6 +1,8 @@
 import glob
 import re
 
+from pathlib import Path
+
 from RPA.PDF import PDF
 from RPA.Excel.Files import Files
 
@@ -11,15 +13,17 @@ class PDFFiles(object):
         self.glob = glob
         self.pdf = PDF()
         self.file = Files()
+        self.output_path = str(Path(Path.cwd(), 'output'))
+        self.excel_file_path = str(Path(self.output_path, 'agencies.xlsx'))
 
     # Search files in folder "output"
     def search_files(self):
-        list_files_pdf = self.glob.glob1("output/", "*.pdf")
+        list_files_pdf = self.glob.glob1(self.excel_file_path, "*.pdf")
         return list_files_pdf
 
     # Looking for information from excel and return list with info all uii
     def looking_for_info_in_excel(self):
-        workbook = self.file.open_workbook('output/new_1.xlsx')
+        workbook = self.file.open_workbook(self.excel_file_path)
         worksheet = workbook.read_worksheet('Individual Investments', header=True, start=1)
         list_excel = []
         for file in self.search_files():

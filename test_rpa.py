@@ -3,6 +3,7 @@ from pathlib import Path
 
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
+from RPA.Browser.Selenium import ChromeOptions
 from RPA.FileSystem import FileSystem
 
 from pdf import PDFFiles
@@ -45,11 +46,12 @@ class ItDashBoard(object):
     # Collect information about agent and add to new_1.xlsx file
     def agent_full_information(self, url):
         self.browser.go_to(url)
-        self.browser.click_element_if_visible(
-            'css:select.form-control.c-select[aria-controls="investments-table-object"]')
-        self.browser.click_element_if_visible('css:select.form-control.c-select[aria-controls] option[value="-1"]')
+        self.browser.wait_until_element_is_visible(
+            'css:select.form-control.c-select[aria-controls="investments-table-object"]', timeout=10)
+        self.browser.find_element('css:select.form-control.c-select[aria-controls="investments-table-object"]').click()
+        self.browser.find_element('css:select.form-control.c-select[aria-controls] option[value="-1"]').click()
+        time.sleep(10)
         list_all = self.browser.find_elements('css:table[id="investments-table-object"] tbody tr[role="row"]')
-        time.sleep(15)
         dict_all = {
             'uii': [],
             'bureau': [],
@@ -78,15 +80,19 @@ class ItDashBoard(object):
 
     # download pdf files
     def links_to_go(self, hrefs):
-        self.browser.set_download_directory(self.output_path)
+        #Browser().set_download_directory(self.output_path)
         for link in hrefs:
             self.browser.go_to(link)
             self.browser.click_element_if_visible('css:div.row.top-gutter.tuck-4 a')
-            time.sleep(10)
+            time.sleep(20)
 
     # all functions
     def main(self):
-        self.browser.open_available_browser('https://itdashboard.gov/')
+        preferences = {"download.default_directory": self.output_path,
+                       "directory_upgrade": True,
+                       "safebrowsing.enabled": True}
+        ChromeOptions().add_experimental_option("prefs", preferences)
+        self.browser.open_chrome_browser('https://itdashboard.gov/', preferences=preferences)
         self.click_dive_in()
         dict_values = self.search_informations()
         list_href = self.agent_full_information(self.search_agent(dict_values))
