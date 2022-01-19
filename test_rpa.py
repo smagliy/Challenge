@@ -1,3 +1,4 @@
+import glob
 import time
 from pathlib import Path
 
@@ -80,11 +81,16 @@ class ItDashBoard(object):
 
     # download pdf files
     def links_to_go(self, hrefs):
-        #Browser().set_download_directory(self.output_path)
         for link in hrefs:
             self.browser.go_to(link)
-            self.browser.click_element_if_visible('css:div.row.top-gutter.tuck-4 a')
-            time.sleep(20)
+            self.browser.wait_until_element_is_visible('css:div.row.top-gutter.tuck-4 a')
+            self.browser.find_element('css:div.row.top-gutter.tuck-4 a').click()
+            list_files_pdf = glob.glob1(self.excel_file_path, "*.pdf")
+            count = 1
+            if len(list_files_pdf) >= count:
+                count += 1
+            else:
+                time.sleep(15)
 
     # all functions
     def main(self):
