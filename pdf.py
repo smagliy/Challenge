@@ -18,7 +18,7 @@ class PDFFiles(object):
 
     # Search files in folder "output"
     def search_files(self):
-        list_files_pdf = self.glob.glob1(self.excel_file_path, "*.pdf")
+        list_files_pdf = self.glob.glob1(self.output_path, "*.pdf")
         return list_files_pdf
 
     # Looking for information from excel and return list with info all uii
@@ -45,9 +45,3 @@ class PDFFiles(object):
                 print(True)
             else:
                 print(False)
-                print(dict_values['uii'], dict_values['investment title'])
-                print(pdf_uui, pdf_investment)
-
-
-pdf = PDFFiles()
-pdf.info_from_files_pdf()
