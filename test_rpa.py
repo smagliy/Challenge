@@ -34,7 +34,10 @@ class ItDashBoard(object):
         """
         all functions
         """
-        self.browser.open_chrome_browser('https://itdashboard.gov/', preferences=self.preferences)
+        self.browser.open_chrome_browser(
+            'https://itdashboard.gov/',
+            preferences=self.preferences
+        )
         self.click_dive_in()
         self.files.create()
         agencies = self.get_list_of_all_agencies()
@@ -90,18 +93,22 @@ class ItDashBoard(object):
         Collect information about agent
         """
         url = self.browser.find_element('css: a', parent=agency)
-        print(url.text)
         self.browser.click_element(url)
         self.browser.wait_until_element_is_visible(
-            'css:select[aria-controls="investments-table-object"]', timeout=10)
+            'css:select[aria-controls="investments-table-object"]',
+            timeout=10
+        )
         self.browser.find_element('css:select[name] option[value="-1"]').click()
         self.browser.wait_until_element_is_not_visible(
-            'css:a.paginate_button[data-dt-idx="6"]', timeout=10
+            'css:a.paginate_button[data-dt-idx="6"]',
+            timeout=10
         )
         list_all = self.browser.find_elements(
             'css:table[id="investments-table-object"] tbody tr[role="row"]'
         )
-        list_headers = [i.text for i in self.browser.find_elements('css:div tr[role="row"] th[tabindex]')]
+        list_headers = [i.text for i in self.browser.find_elements(
+            'css:div tr[role="row"] th[tabindex]'
+        )]
         data_list = []
         for row in list_all:
             cols = self.browser.find_elements('css:td', parent=row)
@@ -118,8 +125,8 @@ class ItDashBoard(object):
         self.files.create_worksheet('Individual Investments')
         self.files.append_worksheet('Individual Investments', full_list, header=True)
         self.files.save(self.excel_file_path)
-        list_href = [el.get_attribute('href') for el in self.browser.find_elements(
-            'css:td.left.sorting_2 a')]
+        list_href = [el.get_attribute('href') for el in
+                     self.browser.find_elements('css:td.left.sorting_2 a')]
         return list_href
 
     def download_pdf_from_links(self, hrefs):
