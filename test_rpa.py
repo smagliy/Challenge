@@ -1,9 +1,8 @@
 import glob
-import time
 from pathlib import Path
 
 from RPA.Browser.Selenium import Selenium
-from RPA.Excel.Files import Files
+from RPA.Excel.Files import XlsWorkbook
 from RPA.Browser.Selenium import ChromeOptions
 from RPA.FileSystem import FileSystem
 
@@ -11,100 +10,129 @@ from pdf import PDFFiles
 
 
 class ItDashBoard(object):
-    """Class ITDashBoard does: open the browser, add elements
-    to file with 2-sheet and download pdf files in folder 'output'"""
+    """
+    Class ITDashBoard does: open the browser, add elements
+    to file with 2-sheet and download pdf files in folder 'output'
+    """
     def __init__(self, agent):
         self.browser = Selenium()
-        self.files = Files()
+        self.files = XlsWorkbook()
+        self.fs = FileSystem()
         self.agent = agent
         self.output_path = str(Path(Path.cwd(), 'output'))
+        self.chrome = ChromeOptions()
+        self.preferences = {
+            "download.default_directory": self.output_path,
+            "directory_upgrade": True,
+            "safebrowsing.enabled": True,
+        }
+        self.chrome.add_experimental_option("prefs", self.preferences)
         self.excel_file_path = str(Path(self.output_path, 'agencies.xlsx'))
+        self.fs.create_directory(self.output_path, parents=True)
+
+    def main(self):
+        """
+        all functions
+        """
+        self.browser.open_chrome_browser('https://itdashboard.gov/', preferences=self.preferences)
+        self.click_dive_in()
+        self.files.create()
+        agencies = self.get_list_of_all_agencies()
+        total_spend = self.get_total_spend_for_agencies(agencies)
+        self.add_new_sheet_agencies(total_spend)
+        target_agency = self.look_for_agency(agencies)
+        if target_agency:
+            list_header_and_dict = self.agent_full_information(target_agency)
+            list_href = self.add_new_worksheet_invest(list_header_and_dict)
+            self.download_pdf_from_links(list_href)
+        else:
+            raise Exception('Can`t find selected agency')
+        self.browser.close_browser()
 
     def click_dive_in(self):
-        btn = self.browser.find_element('css:a.btn.btn-default.btn-lg-2x')
-        btn.click()
+        self.browser.click_element_when_visible('css:a.btn.btn-default.btn-lg-2x')
+        self.browser.wait_until_element_is_visible('css:div#agency-tiles-widget')
+        return
 
-    # Looking for information from table in site`s department and add to new_1.xlsx file
-    def search_informations(self):
-        self.browser.wait_until_element_is_visible('css:a.btn.btn-default.btn-sm')
-        dict_elements = {
-            'button': [el.get_attribute('href') for el in self.browser.find_elements('css:a.btn.btn-default.btn-sm')],
-            'name': [el.text for el in self.browser.find_elements('css:span.h4.w200')],
-            'salary': [el.text for el in self.browser.find_elements('css:span.h1.w900')]
-        }
-        FileSystem().create_directory(self.output_path, parents=True)
-        workbook = self.files.create_workbook(self.excel_file_path)
-        workbook.create_worksheet('Agencies')
-        workbook.append_worksheet('Agencies', {'name': dict_elements['name'], 'salary': dict_elements['salary']})
-        workbook.save()
-        return dict_elements
+    def get_list_of_all_agencies(self):
+        parent = self.browser.find_element('css:div#agency-tiles-widget')
+        all_agencies = self.browser.find_elements('css:div.tuck-5', parent=parent)
+        return all_agencies
 
-    # Search index in dictionary['button']
-    def search_agent(self, dict_info):
-        index = dict_info['name'].index(self.agent)
-        return dict_info['button'][index]
+    def get_total_spend_for_agencies(self, agencies):
+        all_agencies_spend = []
+        for agency in agencies:
+            agency_name = self.browser.find_element('css:span.w200', parent=agency).text
+            agency_amount = self.browser.find_element('css:span.w900', parent=agency).text
+            all_agencies_spend.append([agency_name, agency_amount])
+        return all_agencies_spend
 
-    # Collect information about agent and add to new_1.xlsx file
-    def agent_full_information(self, url):
-        self.browser.go_to(url)
+    def look_for_agency(self, agencies):
+        for agency in agencies:
+            agency_name = self.browser.find_element('css:span.w200', parent=agency).text
+            if agency_name == self.agent:
+                return agency
+        else:
+            return None
+
+    def add_new_sheet_agencies(self, data):
+        """
+        Create new sheet "Agencies" and add info
+        """
+        self.files.create_worksheet('Agencies')
+        headers = [['Agency', 'Value']]
+        self.files.append_worksheet('Agencies', headers)
+        self.files.append_worksheet('Agencies', data)
+        self.files.save(self.excel_file_path)
+
+    def agent_full_information(self, agency):
+        """
+        Collect information about agent
+        """
+        url = self.browser.find_element('css: a', parent=agency)
+        print(url.text)
+        self.browser.click_element(url)
         self.browser.wait_until_element_is_visible(
-            'css:select.form-control.c-select[aria-controls="investments-table-object"]', timeout=10)
-        self.browser.find_element('css:select.form-control.c-select[aria-controls="investments-table-object"]').click()
-        self.browser.find_element('css:select.form-control.c-select[aria-controls] option[value="-1"]').click()
-        time.sleep(10)
-        list_all = self.browser.find_elements('css:table[id="investments-table-object"] tbody tr[role="row"]')
-        dict_all = {
-            'uii': [],
-            'bureau': [],
-            'investment title': [],
-            'total': [],
-            'type': [],
-            'cio': [],
-            'projects': []
-        }
+            'css:select[aria-controls="investments-table-object"]', timeout=20)
+        self.browser.find_element('css:select[name] option[value="-1"]').click()
+        self.browser.wait_until_element_is_not_visible(
+            'css:a.paginate_button[data-dt-idx="6"]', timeout=10)
+        list_all = self.browser.find_elements(
+            'css:table[id="investments-table-object"] tbody tr[role="row"]')
+        list_headers = [i.text for i in self.browser.find_elements('css:div tr[role="row"] th[tabindex]')]
+        data_list = []
         for row in list_all:
             cols = self.browser.find_elements('css:td', parent=row)
-            dict_all['uii'].append(cols[0].text)
-            dict_all['bureau'].append(cols[1].text)
-            dict_all['investment title'].append(cols[2].text)
-            dict_all['total'].append(cols[3].text)
-            dict_all['type'].append(cols[4].text)
-            dict_all['cio'].append(cols[5].text)
-            dict_all['projects'].append(cols[6].text)
-        workbook = self.files.open_workbook(self.excel_file_path)
-        workbook.create_worksheet('Individual Investments')
-        workbook.append_worksheet('Individual Investments', dict_all,
-                                  header=['uii', 'bureau', 'investment title', 'total', 'type', 'cio', 'projects'])
-        workbook.save()
-        list_href = [el.get_attribute('href') for el in self.browser.find_elements('css:td.left.sorting_2 a')]
+            data = [col.text for col in cols]
+            data_with_headers = dict(zip(list_headers, data))
+            data_list.append(data_with_headers)
+        return data_list
+
+    def add_new_worksheet_invest(self, full_list):
+        """
+        Add new sheet in workbook "Individual Investment"
+        """
+        self.files.open(self.excel_file_path)
+        self.files.create_worksheet('Individual Investments')
+        self.files.append_worksheet('Individual Investments', full_list, header=True)
+        self.files.save(self.excel_file_path)
+        list_href = [el.get_attribute('href') for el in self.browser.find_elements(
+            'css:td.left.sorting_2 a')]
         return list_href
 
-    # download pdf files
-    def links_to_go(self, hrefs):
-        count = 1
+    def download_pdf_from_links(self, hrefs):
+        """
+        Download pdf files
+        """
+        count = 0
         for link in hrefs:
             self.browser.go_to(link)
             self.browser.wait_until_element_is_visible('css:div.row.top-gutter.tuck-4 a')
             self.browser.find_element('css:div.row.top-gutter.tuck-4 a').click()
+            count += 1
             list_files_pdf = glob.glob1(self.output_path, "*.pdf")
-            while len(list_files_pdf) != count:
-                time.sleep(3)
+            while len(list_files_pdf) < count:
                 list_files_pdf = glob.glob1(self.output_path, "*.pdf")
-            else:
-                count += 1
-
-    # all functions
-    def main(self):
-        preferences = {"download.default_directory": self.output_path,
-                       "directory_upgrade": True,
-                       "safebrowsing.enabled": True}
-        ChromeOptions().add_experimental_option("prefs", preferences)
-        self.browser.open_chrome_browser('https://itdashboard.gov/', preferences=preferences)
-        self.click_dive_in()
-        dict_values = self.search_informations()
-        list_href = self.agent_full_information(self.search_agent(dict_values))
-        self.links_to_go(list_href)
-        self.browser.close_browser()
 
 
 if __name__ == "__main__":
