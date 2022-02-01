@@ -96,9 +96,11 @@ class ItDashBoard(object):
             'css:select[aria-controls="investments-table-object"]', timeout=10)
         self.browser.find_element('css:select[name] option[value="-1"]').click()
         self.browser.wait_until_element_is_not_visible(
-            'css:a.paginate_button[data-dt-idx="6"]', timeout=10)
+            'css:a.paginate_button[data-dt-idx="6"]', timeout=10
+        )
         list_all = self.browser.find_elements(
-            'css:table[id="investments-table-object"] tbody tr[role="row"]')
+            'css:table[id="investments-table-object"] tbody tr[role="row"]'
+        )
         list_headers = [i.text for i in self.browser.find_elements('css:div tr[role="row"] th[tabindex]')]
         data_list = []
         for row in list_all:
