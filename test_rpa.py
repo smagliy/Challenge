@@ -125,8 +125,8 @@ class ItDashBoard(object):
         self.files.create_worksheet('Individual Investments')
         self.files.append_worksheet('Individual Investments', full_list, header=True)
         self.files.save(self.excel_file_path)
-        list_href = [el.get_attribute('href') for el in
-                     self.browser.find_elements('css:td.left.sorting_2 a')]
+        list_hrefs_component = self.browser.find_elements('css:td.left.sorting_2 a')
+        list_href = [el.get_attribute('href') for el in list_hrefs_component]
         return list_href
 
     def download_pdf_from_links(self, hrefs):
