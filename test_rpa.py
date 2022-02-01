@@ -93,7 +93,7 @@ class ItDashBoard(object):
         print(url.text)
         self.browser.click_element(url)
         self.browser.wait_until_element_is_visible(
-            'css:select[aria-controls="investments-table-object"]', timeout=20)
+            'css:select[aria-controls="investments-table-object"]', timeout=10)
         self.browser.find_element('css:select[name] option[value="-1"]').click()
         self.browser.wait_until_element_is_not_visible(
             'css:a.paginate_button[data-dt-idx="6"]', timeout=10)
